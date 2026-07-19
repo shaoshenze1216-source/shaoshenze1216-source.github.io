@@ -13,6 +13,8 @@
     "preview": "vite preview --outDir dist/server/public"
   },
   "devDependencies": {
+    "@emnapi/core": "1.11.2",
+    "@emnapi/runtime": "1.11.2",
     "sharp": "^0.35.3",
     "vite": "^8.1.5"
   }
