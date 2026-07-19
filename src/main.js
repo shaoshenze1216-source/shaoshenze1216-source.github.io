@@ -43,22 +43,36 @@ let mediaZoomLevel = 1;
 let mediaViewerTrigger = null;
 let mediaPan = null;
 
+const ASSET_ORIGIN = "https://shaoshenze-portfolio-assets-1216.oss-cn-shanghai.aliyuncs.com/portfolio-assets";
+const ASSET_PLACEHOLDER = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+const assetUrl = (path = "") => (path.startsWith("/") ? `${ASSET_ORIGIN}${path}` : path);
+
+document.addEventListener("error", (event) => {
+  const image = event.target;
+  if (!(image instanceof HTMLImageElement)) return;
+  const fallbackSource = image.dataset.assetFallback;
+  if (!fallbackSource || image.dataset.assetFallbackUsed === "true") return;
+  image.dataset.assetFallbackUsed = "true";
+  image.closest("picture")?.querySelectorAll("source").forEach((source) => source.remove());
+  image.src = fallbackSource;
+}, true);
+
 const getFeaturedThemeName = (theme) => theme.subtitle.split("/")[0].trim();
 
 const renderCoverPicture = ({ optimized, fallback, alt = "", width, height, loading = "lazy", fetchPriority = "auto" }) => `
   <picture>
-    ${optimized ? `<source srcset="${optimized}" type="image/avif" />` : ""}
-    <img src="${fallback}" alt="${alt}" width="${width}" height="${height}" loading="${loading}" fetchpriority="${fetchPriority}" decoding="async" />
+    <img src="${ASSET_PLACEHOLDER}" data-asset-src="${assetUrl(optimized || fallback)}" data-asset-fallback="${fallback}" alt="${alt}" width="${width}" height="${height}" loading="${loading}" fetchpriority="${fetchPriority}" decoding="async" />
   </picture>
 `;
 
 const getOptimizedMediaPath = (source = "") => source.replace(/\.jpe?g$/i, ".webp");
 const optimizedMediaSources = [...new Set(
-  projects.flatMap((project) => project.media.map((item) => getOptimizedMediaPath(item.image)).filter(Boolean)),
+  projects.flatMap((project) => project.media.map((item) => assetUrl(getOptimizedMediaPath(item.image))).filter(Boolean)),
 )];
 const optimizedMediaSet = new Set(optimizedMediaSources);
 const readyMediaSources = new Set();
 const assetCacheRequests = new Map();
+const assetObjectUrls = new Map();
 
 const updateAssetPreloadStatus = () => {
   if (!assetPreloadStatus || !assetPreloadCount) return;
@@ -72,7 +86,8 @@ const updateAssetPreloadStatus = () => {
 };
 
 const cacheAsset = (source, priority = "low") => {
-  if (!source) return Promise.resolve(false);
+  if (!source) return Promise.resolve(null);
+  if (assetObjectUrls.has(source)) return Promise.resolve(assetObjectUrls.get(source));
   if (assetCacheRequests.has(source)) return assetCacheRequests.get(source);
   const request = (async () => {
     for (let attempt = 0; attempt < 3; attempt += 1) {
@@ -82,23 +97,39 @@ const cacheAsset = (source, priority = "low") => {
           priority,
         });
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        await response.blob();
+        const blob = await response.blob();
+        const objectUrl = URL.createObjectURL(blob);
+        assetObjectUrls.set(source, objectUrl);
         if (optimizedMediaSet.has(source) && !readyMediaSources.has(source)) {
           readyMediaSources.add(source);
           updateAssetPreloadStatus();
         }
-        return true;
+        return objectUrl;
       } catch {
         if (attempt < 2) await new Promise((resolve) => window.setTimeout(resolve, 350 * (attempt + 1)));
       }
     }
-    return false;
+    return null;
   })();
   assetCacheRequests.set(source, request);
-  request.then((succeeded) => {
-    if (!succeeded) assetCacheRequests.delete(source);
+  request.then((objectUrl) => {
+    if (!objectUrl) assetCacheRequests.delete(source);
   });
   return request;
+};
+
+const hydrateAssetImage = async (image) => {
+  const source = image.dataset.assetSrc;
+  if (!source || image.dataset.assetHydrationStarted === "true") return;
+  image.dataset.assetHydrationStarted = "true";
+  const objectUrl = await cacheAsset(source, image.fetchPriority === "high" ? "high" : "low");
+  if (!image.isConnected) return;
+  image.dataset.assetReady = "true";
+  image.src = objectUrl || image.dataset.assetFallback || image.dataset.fallbackSrc;
+};
+
+const hydrateAssetImages = (scope = document) => {
+  scope.querySelectorAll("img[data-asset-src]").forEach((image) => hydrateAssetImage(image));
 };
 
 const cacheAssets = async (sources, concurrency = 4, priority = "low") => {
@@ -115,15 +146,15 @@ const cacheAssets = async (sources, concurrency = 4, priority = "low") => {
 };
 
 const prioritizeProjectMedia = (project) => cacheAssets(
-  project.media.map((item) => getOptimizedMediaPath(item.image)),
+  project.media.map((item) => assetUrl(getOptimizedMediaPath(item.image))),
   6,
   "high",
 );
 
 const scheduleAssetWarmup = () => {
   const coverSources = [
-    ...gameThemes.map((theme) => theme.cover?.image),
-    ...projects.map((project) => project.coverOptimized),
+    ...gameThemes.map((theme) => assetUrl(theme.cover?.image || "")),
+    ...projects.map((project) => assetUrl(project.coverOptimized)),
   ];
   const mediaConcurrency = navigator.connection?.effectiveType?.includes("2g") ? 2 : 3;
   const run = async () => {
@@ -167,7 +198,7 @@ const renderHeroFeature = () => {
     <div class="hero-feature-stage" aria-hidden="true">
       ${featuredThemes.map((theme, index) => `
         <div class="hero-feature-slide ${index === 0 ? "is-active" : ""}" data-feature-slide="${theme.id}" style="--feature-bg: ${theme.cover.background}">
-          <img src="${theme.cover.image}" alt="" width="1800" height="753" loading="${index === 0 ? "eager" : "lazy"}" fetchpriority="${index === 0 ? "high" : "low"}" decoding="async" />
+          <img src="${ASSET_PLACEHOLDER}" data-asset-src="${assetUrl(theme.cover.image)}" data-asset-fallback="${theme.cover.image}" alt="" width="1800" height="753" loading="${index === 0 ? "eager" : "lazy"}" fetchpriority="${index === 0 ? "high" : "low"}" decoding="async" />
         </div>
       `).join("")}
     </div>
@@ -187,6 +218,7 @@ const renderHeroFeature = () => {
       `).join("")}
     </div>
   `;
+  hydrateAssetImages(heroFeature);
   setHeroFeaturePreview(primaryTheme.id);
 };
 
@@ -208,7 +240,7 @@ const renderThemeCover = (theme) => {
     <figure class="theme-cover ${coverImage ? "has-image" : "is-generated"}" style="--theme-cover-bg: ${coverBackground}; --theme-cover-accent: ${theme.accent}">
       <div class="theme-cover-visual">
         ${coverImage
-          ? `<img src="${coverImage}" alt="${title} 游戏 Logo 封皮" width="1800" height="753" loading="lazy" decoding="async" />`
+          ? `<img src="${ASSET_PLACEHOLDER}" data-asset-src="${assetUrl(coverImage)}" data-asset-fallback="${coverImage}" alt="${title} 游戏 Logo 封皮" width="1800" height="753" loading="lazy" decoding="async" />`
           : `<div class="theme-cover-fallback"><span>${theme.index}</span><strong>${title}</strong><small>${englishTitle}</small></div>`}
         <span class="theme-cover-code">ARCHIVE COVER / ${theme.index}</span>
       </div>
@@ -352,6 +384,8 @@ const renderActiveTheme = ({ transition = false, focusProjects = false } = {}) =
     renderThemeRail();
     renderThemeHeader(theme);
     grid.innerHTML = theme.projects.map(renderProjectCard).join("");
+    hydrateAssetImages(themeHeader);
+    hydrateAssetImages(grid);
     observeReveals(grid);
     bindCardInteractions();
     if (focusProjects) focusProjectGrid();
@@ -488,8 +522,7 @@ const renderCaseMedia = ({ item, globalIndex }, totalSize, family = getMediaFami
   const optimizedImage = getOptimizedMediaPath(item.image);
   const image = item.image ? `
     <picture>
-      <source srcset="${optimizedImage}" type="image/webp" />
-      <img src="${item.image}" data-fallback-src="${item.image}" alt="${item.label}" loading="eager" fetchpriority="${globalIndex < 3 ? "high" : "auto"}" decoding="async" />
+      <img src="${ASSET_PLACEHOLDER}" data-asset-src="${assetUrl(optimizedImage)}" data-fallback-src="${item.image}" alt="${item.label}" loading="eager" fetchpriority="${globalIndex < 3 ? "high" : "auto"}" decoding="async" />
     </picture>
   ` : "";
   const contextLabel = item.sourceLayout === "desktop" ? "PC" : item.sourceLayout === "mobile" ? "MOBILE" : mediaFamilyLabels[family];
@@ -617,7 +650,7 @@ const bindCaseImageState = () => {
 
     image.addEventListener("load", markLoaded, { once: true });
     image.addEventListener("error", useFallback);
-    if (image.complete) {
+    if (image.dataset.assetReady === "true" && image.complete) {
       if (image.naturalWidth > 0) markLoaded();
       else useFallback();
     }
@@ -629,6 +662,7 @@ const renderOpenCase = (project, { resetScroll = true } = {}) => {
   caseContent.innerHTML = renderCase(project);
   updateCaseToolbar(project);
   bindCaseImageState();
+  hydrateAssetImages(caseContent);
   if (resetScroll) caseShell.scrollTop = 0;
 };
 
@@ -683,6 +717,7 @@ const closeMediaViewer = ({ restoreFocus = true } = {}) => {
   caseToolbar.inert = false;
   mediaViewerImage.removeAttribute("src");
   mediaViewerImage.removeAttribute("data-fallback-src");
+  mediaViewerImage.removeAttribute("data-asset-source");
   mediaViewerImage.style.removeProperty("width");
   if (restoreFocus) mediaViewerTrigger?.focus({ preventScroll: true });
   mediaViewerTrigger = null;
@@ -690,8 +725,10 @@ const closeMediaViewer = ({ restoreFocus = true } = {}) => {
 
 const openMediaViewer = (item, trigger) => {
   mediaViewerTrigger = trigger;
+  const assetSource = assetUrl(getOptimizedMediaPath(item.image));
   mediaViewerImage.dataset.fallbackSrc = item.image;
-  mediaViewerImage.src = getOptimizedMediaPath(item.image);
+  mediaViewerImage.dataset.assetSource = assetSource;
+  mediaViewerImage.removeAttribute("src");
   mediaViewerImage.alt = item.label;
   mediaViewerTitle.textContent = item.label;
   mediaViewerMeta.textContent = item.origin || `${item.detail} / ORIGINAL IMAGE`;
@@ -699,6 +736,10 @@ const openMediaViewer = (item, trigger) => {
   caseContent.inert = true;
   caseToolbar.inert = true;
   mediaViewer.querySelector("[data-media-close]")?.focus({ preventScroll: true });
+  cacheAsset(assetSource, "high").then((objectUrl) => {
+    if (mediaViewer.hidden || mediaViewerImage.dataset.assetSource !== assetSource) return;
+    mediaViewerImage.src = objectUrl || item.image;
+  });
 };
 
 const finishMediaPan = () => {
@@ -841,5 +882,6 @@ initCursor();
 renderHeroFeature();
 renderHeroStats();
 initHeroFeaturePreview();
+hydrateAssetImages(document);
 scheduleAssetWarmup();
 document.querySelector("#currentYear").textContent = new Date().getFullYear();
