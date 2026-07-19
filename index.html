@@ -1,0 +1,287 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="邵申泽的游戏 UI/UX 设计作品集，聚焦游戏 WebView、活动落地页、视觉系统与跨端体验。" />
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="邵申泽 — Game UI/UX Portfolio" />
+    <meta property="og:description" content="游戏 WebView、活动落地页、视觉系统与跨端体验设计作品集。" />
+    <meta name="theme-color" content="#e9e9e4" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="preload" href="/fonts/barlow-condensed-latin-600-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/ibm-plex-sans-latin-wght-normal.woff2" as="font" type="font/woff2" crossorigin />
+    <title>邵申泽 — Game UI/UX Portfolio</title>
+  </head>
+  <body>
+    <div class="cursor-orbit" aria-hidden="true"><span class="cursor-dot"></span><span class="cursor-label">OPEN</span></div>
+    <div class="page-progress" aria-hidden="true"></div>
+    <div class="system-grid" aria-hidden="true"></div>
+    <div class="grain" aria-hidden="true"></div>
+
+    <header class="site-header">
+      <a class="wordmark" href="#top" aria-label="返回首页">
+        <span class="wordmark-symbol" aria-hidden="true"><i></i></span>
+        <span class="wordmark-copy"><strong>邵申泽</strong><small>UI / UX DESIGNER</small></span>
+      </a>
+      <nav aria-label="主导航">
+        <a href="#archive">ARCHIVE</a>
+        <a href="#profile">PROFILE</a>
+        <a href="#method">METHOD</a>
+        <a href="#contact">CONTACT</a>
+      </nav>
+      <p class="availability"><span aria-hidden="true"></span> SYSTEM / ONLINE</p>
+    </header>
+
+    <main id="top">
+      <section class="command-deck" aria-labelledby="hero-title">
+        <div class="deck-topline">
+          <span>PORTFOLIO SYSTEM / 2026</span>
+          <span>MODE: PROJECT INDEX</span>
+          <span>GAME INDEX <b id="themeRange">001—006</b></span>
+        </div>
+        <div class="deck-grid">
+          <div class="deck-primary">
+            <p class="eyebrow reveal">SHAO SHENZE / UI UX DESIGNER</p>
+            <ol class="deck-capabilities reveal" aria-label="核心设计能力">
+              <li><b>01</b><span><strong>WEBVIEW</strong><small>游戏内嵌页面</small></span></li>
+              <li><b>02</b><span><strong>CAMPAIGN</strong><small>活动落地页面</small></span></li>
+              <li><b>03</b><span><strong>RESPONSIVE</strong><small>跨端体验设计</small></span></li>
+              <li><b>04</b><span><strong>DELIVERY</strong><small>研发落地交付</small></span></li>
+            </ol>
+            <h1 id="hero-title" class="deck-title reveal">游戏网页<br /><span>作品档案</span></h1>
+            <p class="deck-intro reveal">专注游戏 WebView、活动落地页与跨端体验，<br />从需求分析到开发验收完整推进设计落地。</p>
+            <div class="deck-primary-footer reveal">
+              <a class="deck-link" href="#archive" data-cursor="enter"><span>ENTER ARCHIVE</span><i aria-hidden="true">↓</i></a>
+              <div class="deck-register" aria-label="作品集统计">
+                <div><span id="themeCount">00</span><p><strong>游戏分类</strong><small>GAME CATEGORIES</small></p></div>
+                <div><span id="projectCount">00</span><p><strong>项目案例</strong><small>PROJECT CASES</small></p></div>
+                <div><span id="moduleCount">00</span><p><strong>设计画面</strong><small>DESIGN VISUALS</small></p></div>
+              </div>
+            </div>
+          </div>
+          <div class="hero-feature-panel reveal">
+            <div class="feature-panel-top"><span>FEATURED GAME INDEX</span><span>04 SELECTED</span></div>
+            <div id="heroFeature" class="hero-feature"></div>
+            <div class="feature-panel-bottom"><span>HOVER TO PREVIEW</span><i aria-hidden="true"></i><span>CLICK TO VIEW PROJECTS</span></div>
+          </div>
+        </div>
+        <div class="deck-ruler" aria-hidden="true"><span>00</span><i></i><span>06</span><i></i><span>12</span><i></i><span>18</span><i></i><span>24</span></div>
+      </section>
+
+      <section id="archive" class="archive-section" aria-labelledby="archive-title">
+        <header class="archive-heading reveal">
+          <p class="section-index">01 <span>/ 04</span></p>
+          <div><p class="eyebrow">GAME PROJECT INDEX / PAGE CATEGORIES</p><h2 id="archive-title">游戏 / 页面</h2></div>
+          <p>按游戏项目整理官网、活动页、互动工具与市场视觉，点击项目封面查看设计详情与完整画面。</p>
+        </header>
+        <div class="archive-layout">
+          <aside id="themeRail" class="theme-rail" aria-label="游戏项目导航"></aside>
+          <div class="theme-workspace">
+            <div id="themeTransition" class="theme-transition" aria-hidden="true">
+              <div class="transition-rail"><i></i></div>
+              <div class="transition-readout"><span>SWITCHING ARCHIVE</span><b id="transitionCode">01</b></div>
+            </div>
+            <div id="themeHeader" class="theme-header"></div>
+            <div id="projectGrid" class="project-grid"></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="profile" class="profile-section" aria-labelledby="profile-title">
+        <header class="profile-heading reveal">
+          <p class="section-index">02 <span>/ 04</span></p>
+          <p class="eyebrow">PROFILE / EXPERIENCE</p>
+          <p>2023—NOW / UI UX DESIGN</p>
+        </header>
+
+        <div class="profile-identity">
+          <div class="profile-name-block reveal">
+            <div class="profile-name-code"><span>PERSONAL FILE / 001</span><i></i><span>GAME UI UX / DESIGN</span></div>
+            <p class="profile-kicker">GAME WEB / UI UX DESIGNER</p>
+            <h2 id="profile-title"><span>邵</span>申泽</h2>
+            <p class="profile-statement">以清晰的信息结构、准确的视觉语言和可落地的交互方案，让游戏网页既有品牌表现力，也能高效完成业务目标。</p>
+          </div>
+
+          <figure class="profile-portrait reveal">
+            <div class="profile-portrait-register">
+              <span>VISUAL ID / 01</span>
+              <span>DESIGNER PROFILE</span>
+            </div>
+            <div class="profile-portrait-frame">
+              <img
+                src="/profile-shao-shenze.webp"
+                alt="邵申泽在城市街景中的个人照片"
+                width="1120"
+                height="1494"
+                loading="lazy"
+                decoding="async"
+              />
+              <div class="profile-portrait-grid" aria-hidden="true"></div>
+              <span class="profile-portrait-index" aria-hidden="true">01</span>
+            </div>
+            <figcaption>
+              <span>PORTRAIT / SHAO SHENZE</span>
+              <strong>UI UX DESIGNER</strong>
+            </figcaption>
+          </figure>
+
+          <div class="profile-info-panel reveal">
+            <div class="profile-contact-grid">
+              <a href="tel:15821271216">
+                <span>PHONE / 电话</span>
+                <strong>158 2127 1216</strong>
+                <i aria-hidden="true">↗</i>
+              </a>
+              <a href="mailto:2542890024@qq.com">
+                <span>EMAIL / 邮箱</span>
+                <strong>2542890024@qq.com</strong>
+                <i aria-hidden="true">↗</i>
+              </a>
+            </div>
+            <article class="education-card">
+              <div><span>EDUCATION / 01</span><strong>2022.09—2025.06</strong></div>
+              <h3>华东师范大学</h3>
+              <p>985 · 设计学院<br />视觉传达设计</p>
+              <small>VISUAL COMMUNICATION DESIGN</small>
+            </article>
+          </div>
+        </div>
+
+        <div class="experience-log">
+          <header class="experience-heading reveal">
+            <p>WORK EXPERIENCE</p>
+            <h2>工作经历</h2>
+            <span>03 RECORDS / 2023—NOW</span>
+          </header>
+
+          <article class="experience-record is-current reveal">
+            <div class="experience-index"><span>01</span><small>CURRENT</small></div>
+            <div class="experience-role">
+              <p>2024.09—至今</p>
+              <h3>心动网络</h3>
+              <strong>UI/UX 设计师</strong>
+              <div class="experience-tags"><span>WEBVIEW</span><span>LANDING PAGE</span><span>DESIGN QA</span></div>
+            </div>
+            <ul>
+              <li>负责自研游戏内嵌 WebView 及外链落地页的 UI/UX 设计，覆盖卡通、泛二次元等多种视觉风格。</li>
+              <li>独立推进需求分析、交互流程、前置对齐、风格探索、页面设计及开发交付的完整设计流程。</li>
+              <li>持续跟进研发落地，通过设计走查与细节验收确保最终效果与设计方案一致。</li>
+              <li>负责外包团队的需求拆解、方案反馈与交付验收，保障项目品质与推进效率。</li>
+            </ul>
+            <div class="experience-signal"><span>END TO END</span><strong>完整设计闭环</strong></div>
+          </article>
+
+          <article class="experience-record reveal">
+            <div class="experience-index"><span>02</span><small>PREVIOUS</small></div>
+            <div class="experience-role">
+              <p>2023.07—2024.08</p>
+              <h3>游族网络</h3>
+              <strong>设计助理</strong>
+              <div class="experience-tags"><span>CAMPAIGN</span><span>CHANNEL</span><span>KEY VISUAL</span></div>
+            </div>
+            <ul>
+              <li>参与多款游戏的市场宣发与渠道视觉设计，优化画面表现和信息层级，提升素材曝光与点击表现。</li>
+              <li>参与《少年西游记2》宣发物料设计，相关素材点击量在多个投放渠道进入前三。</li>
+              <li>负责生日会、万圣节、感恩节等内部活动主视觉及物料延展，强化氛围与视觉统一性。</li>
+            </ul>
+            <div class="experience-signal"><span>CHANNEL RESULT</span><strong>点击量 TOP 3</strong></div>
+          </article>
+
+          <article class="experience-record reveal">
+            <div class="experience-index"><span>03</span><small>PREVIOUS</small></div>
+            <div class="experience-role">
+              <p>2023.01—2023.07</p>
+              <h3>途虎养车</h3>
+              <strong>设计助理</strong>
+              <div class="experience-tags"><span>GROWTH</span><span>MARKETING</span><span>MULTI-SIZE</span></div>
+            </div>
+            <ul>
+              <li>独立负责“洗车美容”业务线日常视觉与营销物料，通过持续优化使页面 UV 点击率由 1.83% 提升至 2.37%。</li>
+              <li>协同完成五一、618 等大型营销活动的视觉物料延展，确保多渠道、多尺寸设计一致并按时交付。</li>
+            </ul>
+            <div class="experience-signal is-metric"><span>UV CTR GROWTH</span><strong>+29.5%</strong><small>1.83% → 2.37%</small></div>
+          </article>
+        </div>
+      </section>
+
+      <section id="method" class="method-section" aria-labelledby="method-title">
+        <div class="method-heading reveal">
+          <p class="section-index">03 <span>/ 04</span></p>
+          <p class="eyebrow">METHOD / WORKFLOW</p>
+          <p>ORDER CREATES FOCUS</p>
+        </div>
+        <div class="method-grid">
+          <h2 id="method-title" class="reveal">让每一个页面，<br /><span>都能被快速理解。</span></h2>
+          <div class="method-copy reveal">
+            <p class="method-lead">作品先按游戏归档，再按页面类型建立清晰索引。</p>
+            <p>我从官网、活动页、角色页和宣传专题的目标出发，梳理信息层级、视觉节奏与交互状态，让每个页面独立成立，也保持游戏品牌的一致性。</p>
+          </div>
+          <ol class="method-list reveal">
+            <li><span>01</span><strong>DEFINE</strong><small>明确游戏、页面类型与目标</small></li>
+            <li><span>02</span><strong>STRUCTURE</strong><small>梳理栏目、模块与内容层级</small></li>
+            <li><span>03</span><strong>DIRECT</strong><small>建立视觉节奏与交互重点</small></li>
+            <li><span>04</span><strong>DELIVER</strong><small>输出页面、长图与复用规范</small></li>
+          </ol>
+        </div>
+      </section>
+
+      <section id="contact" class="contact-section" aria-labelledby="contact-title">
+        <div class="contact-heading reveal">
+          <p class="section-index">04 <span>/ 04</span></p>
+          <p class="eyebrow">START A CONVERSATION</p>
+          <p>GAME UI UX / VISUAL DESIGN</p>
+        </div>
+        <h2 id="contact-title" class="reveal">LET'S<br /><span>CONNECT.</span></h2>
+        <div class="contact-row reveal">
+          <a class="contact-mail" href="mailto:2542890024@qq.com"><span>2542890024@qq.com</span><i aria-hidden="true">↗</i></a>
+          <div class="contact-direct"><a href="tel:15821271216">CALL / 158 2127 1216</a><span>UI UX / GAME WEB</span></div>
+        </div>
+      </section>
+    </main>
+
+    <footer>
+      <p>© <span id="currentYear"></span> / 邵申泽</p>
+      <p>GAME WEB ARCHIVE / BUILT WITH ORDER</p>
+      <a href="#top">BACK TO TOP / ↑</a>
+    </footer>
+
+    <dialog id="caseDialog" class="case-dialog" aria-labelledby="caseTitle">
+      <div class="case-shell">
+        <div class="case-toolbar" aria-label="项目详情导航">
+          <div class="case-toolbar-status" aria-live="polite">
+            <span id="caseProjectIndex">01 / 20</span>
+            <strong id="caseProjectTitle">PROJECT</strong>
+          </div>
+          <div class="case-switcher">
+            <button class="case-step" type="button" data-case-prev aria-label="查看上一个项目"><span aria-hidden="true">←</span> PREV</button>
+            <label class="case-select-label" for="caseProjectSelect">
+              <span>ALL PROJECTS</span>
+              <select id="caseProjectSelect" aria-label="切换项目"></select>
+            </label>
+            <button class="case-step" type="button" data-case-next aria-label="查看下一个项目">NEXT <span aria-hidden="true">→</span></button>
+          </div>
+          <button class="case-close" type="button" aria-label="关闭项目详情"><span>CLOSE</span><i aria-hidden="true">×</i></button>
+        </div>
+        <div id="caseContent"></div>
+        <div id="mediaViewer" class="media-viewer" hidden role="dialog" aria-modal="true" aria-labelledby="mediaViewerTitle">
+          <div class="media-viewer-toolbar">
+            <div class="media-viewer-info"><span id="mediaViewerMeta">PROJECT / ORIGINAL IMAGE</span><strong id="mediaViewerTitle">WORK</strong></div>
+            <div class="media-viewer-controls" role="group" aria-label="图片缩放控制">
+              <button type="button" data-media-zoom-out aria-label="缩小图片">−</button>
+              <output id="mediaViewerZoom" aria-live="polite">100%</output>
+              <button type="button" data-media-zoom-in aria-label="放大图片">+</button>
+              <button type="button" data-media-zoom-fit>FIT WIDTH</button>
+            </div>
+            <button class="media-viewer-close" type="button" data-media-close aria-label="关闭原图查看">CLOSE <i aria-hidden="true">×</i></button>
+          </div>
+          <div class="media-viewer-canvas">
+            <img id="mediaViewerImage" alt="" draggable="false" />
+          </div>
+        </div>
+      </div>
+    </dialog>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
