@@ -1,0 +1,13 @@
+node_modules
+dist
+dist-static
+.DS_Store
+*.local
+
+# Source-quality cover exports stay local; deployed cards use AVIF + JPEG fallback.
+public/project-covers/*.png
+public/project-covers/*.jpg
+!public/project-covers/*-fallback.jpg
+
+# Brand covers are intentionally served from PNG only.
+public/theme-covers/*.avif
