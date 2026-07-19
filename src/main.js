@@ -32,6 +32,8 @@ const themeCount = document.querySelector("#themeCount");
 const projectCount = document.querySelector("#projectCount");
 const moduleCount = document.querySelector("#moduleCount");
 const themeRange = document.querySelector("#themeRange");
+const assetPreloadStatus = document.querySelector("#assetPreloadStatus");
+const assetPreloadCount = document.querySelector("#assetPreloadCount");
 const root = document.documentElement;
 const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const finePointer = window.matchMedia("(pointer: fine)").matches;
@@ -51,44 +53,88 @@ const renderCoverPicture = ({ optimized, fallback, alt = "", width, height, load
 `;
 
 const getOptimizedMediaPath = (source = "") => source.replace(/\.jpe?g$/i, ".webp");
-const warmedAssets = new Map();
+const optimizedMediaSources = [...new Set(
+  projects.flatMap((project) => project.media.map((item) => getOptimizedMediaPath(item.image)).filter(Boolean)),
+)];
+const optimizedMediaSet = new Set(optimizedMediaSources);
+const readyMediaSources = new Set();
+const assetCacheRequests = new Map();
 
-const warmAsset = (source) => {
+const updateAssetPreloadStatus = () => {
+  if (!assetPreloadStatus || !assetPreloadCount) return;
+  const completed = readyMediaSources.size;
+  const total = optimizedMediaSources.length;
+  const progress = total > 0 ? completed / total : 1;
+  assetPreloadStatus.style.setProperty("--asset-progress", progress);
+  assetPreloadCount.textContent = `${String(completed).padStart(3, "0")} / ${String(total).padStart(3, "0")}`;
+  assetPreloadStatus.classList.toggle("is-ready", completed === total);
+  assetPreloadStatus.querySelector("b").textContent = completed === total ? "作品图已就绪" : "作品图后台准备中";
+};
+
+const cacheAsset = (source, priority = "low") => {
   if (!source) return Promise.resolve(false);
-  if (warmedAssets.has(source)) return warmedAssets.get(source);
-  const request = new Promise((resolve) => {
-    const image = new Image();
-    image.decoding = "async";
-    image.addEventListener("load", () => resolve(true), { once: true });
-    image.addEventListener("error", () => resolve(false), { once: true });
-    image.src = source;
+  if (assetCacheRequests.has(source)) return assetCacheRequests.get(source);
+  const request = (async () => {
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      try {
+        const response = await fetch(source, {
+          cache: attempt === 0 ? "force-cache" : "reload",
+          priority,
+        });
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        await response.blob();
+        if (optimizedMediaSet.has(source) && !readyMediaSources.has(source)) {
+          readyMediaSources.add(source);
+          updateAssetPreloadStatus();
+        }
+        return true;
+      } catch {
+        if (attempt < 2) await new Promise((resolve) => window.setTimeout(resolve, 350 * (attempt + 1)));
+      }
+    }
+    return false;
+  })();
+  assetCacheRequests.set(source, request);
+  request.then((succeeded) => {
+    if (!succeeded) assetCacheRequests.delete(source);
   });
-  warmedAssets.set(source, request);
   return request;
 };
 
-const warmAssets = async (sources, concurrency = 4) => {
+const cacheAssets = async (sources, concurrency = 4, priority = "low") => {
   const queue = [...new Set(sources.filter(Boolean))];
   let cursor = 0;
   const worker = async () => {
     while (cursor < queue.length) {
       const source = queue[cursor];
       cursor += 1;
-      await warmAsset(source);
+      await cacheAsset(source, priority);
     }
   };
   await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, () => worker()));
 };
 
-const scheduleCoverWarmup = () => {
-  if (navigator.connection?.saveData) return;
-  const sources = [
+const prioritizeProjectMedia = (project) => cacheAssets(
+  project.media.map((item) => getOptimizedMediaPath(item.image)),
+  6,
+  "high",
+);
+
+const scheduleAssetWarmup = () => {
+  const coverSources = [
     ...gameThemes.map((theme) => theme.cover?.image),
     ...projects.map((project) => project.coverOptimized),
   ];
-  const run = () => warmAssets(sources, navigator.connection?.effectiveType?.includes("2g") ? 2 : 4);
-  if ("requestIdleCallback" in window) window.requestIdleCallback(run, { timeout: 1800 });
-  else window.setTimeout(run, 700);
+  const mediaConcurrency = navigator.connection?.effectiveType?.includes("2g") ? 2 : 3;
+  const run = async () => {
+    updateAssetPreloadStatus();
+    await cacheAssets(coverSources, 4);
+    await cacheAssets(optimizedMediaSources, mediaConcurrency);
+    const missingSources = optimizedMediaSources.filter((source) => !readyMediaSources.has(source));
+    if (missingSources.length > 0) await cacheAssets(missingSources, 2);
+    updateAssetPreloadStatus();
+  };
+  window.requestAnimationFrame(() => window.setTimeout(run, 250));
 };
 
 const setHeroFeaturePreview = (themeId) => {
@@ -273,8 +319,14 @@ const bindCardInteractions = () => {
       grid.classList.remove("has-card-focus");
     };
     card.addEventListener("pointerenter", () => {
+      const project = projects.find((item) => item.id === card.querySelector("[data-project]")?.dataset.project);
+      if (project) prioritizeProjectMedia(project);
       card.classList.add("is-hovering");
       grid.classList.add("has-card-focus");
+    });
+    card.addEventListener("focusin", () => {
+      const project = projects.find((item) => item.id === card.querySelector("[data-project]")?.dataset.project);
+      if (project) prioritizeProjectMedia(project);
     });
     card.addEventListener("pointermove", (event) => {
       const rect = card.getBoundingClientRect();
@@ -789,5 +841,5 @@ initCursor();
 renderHeroFeature();
 renderHeroStats();
 initHeroFeaturePreview();
-scheduleCoverWarmup();
+scheduleAssetWarmup();
 document.querySelector("#currentYear").textContent = new Date().getFullYear();
