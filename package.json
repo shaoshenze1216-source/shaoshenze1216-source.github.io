@@ -5,11 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "optimize:media": "node scripts/optimize-media.mjs",
+    "prebuild": "npm run optimize:media",
     "build": "node scripts/build-site.mjs",
+    "prebuild:static": "npm run optimize:media",
     "build:static": "vite build --outDir dist-static",
     "preview": "vite preview --outDir dist/server/public"
   },
   "devDependencies": {
+    "sharp": "^0.35.3",
     "vite": "^8.1.5"
   }
 }

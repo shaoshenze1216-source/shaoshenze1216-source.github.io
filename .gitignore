@@ -11,3 +11,6 @@ public/project-covers/*.jpg
 
 # Brand covers are intentionally served from PNG only.
 public/theme-covers/*.avif
+
+# Generated automatically before each production build.
+public/projects/*.webp

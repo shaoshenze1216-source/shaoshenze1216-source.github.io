@@ -50,6 +50,47 @@ const renderCoverPicture = ({ optimized, fallback, alt = "", width, height, load
   </picture>
 `;
 
+const getOptimizedMediaPath = (source = "") => source.replace(/\.jpe?g$/i, ".webp");
+const warmedAssets = new Map();
+
+const warmAsset = (source) => {
+  if (!source) return Promise.resolve(false);
+  if (warmedAssets.has(source)) return warmedAssets.get(source);
+  const request = new Promise((resolve) => {
+    const image = new Image();
+    image.decoding = "async";
+    image.addEventListener("load", () => resolve(true), { once: true });
+    image.addEventListener("error", () => resolve(false), { once: true });
+    image.src = source;
+  });
+  warmedAssets.set(source, request);
+  return request;
+};
+
+const warmAssets = async (sources, concurrency = 4) => {
+  const queue = [...new Set(sources.filter(Boolean))];
+  let cursor = 0;
+  const worker = async () => {
+    while (cursor < queue.length) {
+      const source = queue[cursor];
+      cursor += 1;
+      await warmAsset(source);
+    }
+  };
+  await Promise.all(Array.from({ length: Math.min(concurrency, queue.length) }, () => worker()));
+};
+
+const scheduleCoverWarmup = () => {
+  if (navigator.connection?.saveData) return;
+  const sources = [
+    ...gameThemes.map((theme) => theme.cover?.image),
+    ...projects.map((project) => project.coverOptimized),
+  ];
+  const run = () => warmAssets(sources, navigator.connection?.effectiveType?.includes("2g") ? 2 : 4);
+  if ("requestIdleCallback" in window) window.requestIdleCallback(run, { timeout: 1800 });
+  else window.setTimeout(run, 700);
+};
+
 const setHeroFeaturePreview = (themeId) => {
   if (!heroFeature) return;
   const featuredThemes = gameThemes.filter((theme) => theme.cover?.image);
@@ -160,13 +201,15 @@ const renderThemeHeader = (theme) => {
   `;
 };
 
-const renderMediaPreview = (project) => {
+const renderMediaPreview = (project, projectIndex = 0) => {
   const image = renderCoverPicture({
     optimized: project.coverOptimized,
     fallback: project.cover,
     alt: `${project.title} 项目封面`,
     width: 1600,
     height: 900,
+    loading: projectIndex < 2 ? "eager" : "lazy",
+    fetchPriority: projectIndex === 0 ? "high" : "auto",
   });
   return `
     <div class="longframe" data-size="cover">
@@ -182,10 +225,10 @@ const renderFormatSummary = (project) => project.groups
   .map((group) => `${group.short} ${String(group.items.length).padStart(2, "0")}`)
   .join(" / ");
 
-const renderProjectCard = (project) => `
+const renderProjectCard = (project, projectIndex) => `
   <article class="archive-card" style="--card-accent: ${project.accent}">
     <button class="archive-card-open" type="button" data-project="${project.id}" data-cursor="open" aria-label="查看 ${project.title} 项目详情">
-      ${renderMediaPreview(project)}
+      ${renderMediaPreview(project, projectIndex)}
       <div class="archive-card-meta" data-echo="${project.type}">
         <div class="archive-card-topline"><span>${project.type}</span><span>${project.year}</span></div>
         <h4>${project.title}</h4>
@@ -390,7 +433,13 @@ const buildCaseRows = (caseRuns) => {
 
 const renderCaseMedia = ({ item, globalIndex }, totalSize, family = getMediaFamily(item)) => {
   const sequence = String(globalIndex + 1).padStart(2, "0");
-  const image = item.image ? `<img src="${item.image}" alt="${item.label}" loading="${globalIndex === 0 ? "eager" : "lazy"}" decoding="async" />` : "";
+  const optimizedImage = getOptimizedMediaPath(item.image);
+  const image = item.image ? `
+    <picture>
+      <source srcset="${optimizedImage}" type="image/webp" />
+      <img src="${item.image}" data-fallback-src="${item.image}" alt="${item.label}" loading="eager" fetchpriority="${globalIndex < 3 ? "high" : "auto"}" decoding="async" />
+    </picture>
+  ` : "";
   const contextLabel = item.sourceLayout === "desktop" ? "PC" : item.sourceLayout === "mobile" ? "MOBILE" : mediaFamilyLabels[family];
   return `
     <figure class="case-media" data-family="${item.display === "long" ? "document" : family}">
@@ -399,8 +448,9 @@ const renderCaseMedia = ({ item, globalIndex }, totalSize, family = getMediaFami
         <strong>${item.label}</strong>
         <small>${contextLabel}</small>
       </figcaption>
-      <button class="case-media-frame" type="button" data-media-view="${globalIndex}" aria-label="放大查看 ${item.label}">
+      <button class="case-media-frame is-loading" type="button" data-media-view="${globalIndex}" aria-label="放大查看 ${item.label}">
         ${item.display === "long" ? '<span class="case-media-scroll">SCROLL / FULL PAGE</span>' : ""}
+        <span class="case-media-loading" aria-hidden="true"><i></i><b>LOADING VISUAL</b></span>
         ${image}
         <span class="case-media-inspect">FULL VIEW / ↗</span>
       </button>
@@ -487,10 +537,46 @@ const updateCaseToolbar = (project) => {
   caseShell.style.setProperty("--case-accent", project.accent);
 };
 
+const bindCaseImageState = () => {
+  caseContent.querySelectorAll(".case-media-frame img").forEach((image) => {
+    const frame = image.closest(".case-media-frame");
+    const loadingLabel = frame?.querySelector(".case-media-loading b");
+    let fallbackAttempted = false;
+
+    const markLoaded = () => {
+      frame?.classList.remove("is-loading", "is-error");
+      frame?.classList.add("is-loaded");
+    };
+    const markError = () => {
+      frame?.classList.remove("is-loading");
+      frame?.classList.add("is-error");
+      if (loadingLabel) loadingLabel.textContent = "LOAD FAILED / OPEN TO RETRY";
+    };
+    const useFallback = () => {
+      const fallbackSource = image.dataset.fallbackSrc;
+      if (!fallbackSource || fallbackAttempted) {
+        markError();
+        return;
+      }
+      fallbackAttempted = true;
+      image.closest("picture")?.querySelector("source")?.remove();
+      image.src = fallbackSource;
+    };
+
+    image.addEventListener("load", markLoaded, { once: true });
+    image.addEventListener("error", useFallback);
+    if (image.complete) {
+      if (image.naturalWidth > 0) markLoaded();
+      else useFallback();
+    }
+  });
+};
+
 const renderOpenCase = (project, { resetScroll = true } = {}) => {
   activeCaseProjectId = project.id;
   caseContent.innerHTML = renderCase(project);
   updateCaseToolbar(project);
+  bindCaseImageState();
   if (resetScroll) caseShell.scrollTop = 0;
 };
 
@@ -544,6 +630,7 @@ const closeMediaViewer = ({ restoreFocus = true } = {}) => {
   caseContent.inert = false;
   caseToolbar.inert = false;
   mediaViewerImage.removeAttribute("src");
+  mediaViewerImage.removeAttribute("data-fallback-src");
   mediaViewerImage.style.removeProperty("width");
   if (restoreFocus) mediaViewerTrigger?.focus({ preventScroll: true });
   mediaViewerTrigger = null;
@@ -551,7 +638,8 @@ const closeMediaViewer = ({ restoreFocus = true } = {}) => {
 
 const openMediaViewer = (item, trigger) => {
   mediaViewerTrigger = trigger;
-  mediaViewerImage.src = item.image;
+  mediaViewerImage.dataset.fallbackSrc = item.image;
+  mediaViewerImage.src = getOptimizedMediaPath(item.image);
   mediaViewerImage.alt = item.label;
   mediaViewerTitle.textContent = item.label;
   mediaViewerMeta.textContent = item.origin || `${item.detail} / ORIGINAL IMAGE`;
@@ -638,6 +726,11 @@ mediaZoomOutButton?.addEventListener("click", () => setMediaZoom(mediaZoomLevel 
 mediaZoomInButton?.addEventListener("click", () => setMediaZoom(mediaZoomLevel + MEDIA_ZOOM_STEP));
 mediaZoomFitButton?.addEventListener("click", () => setMediaZoom(1, { resetPosition: true }));
 mediaViewerImage?.addEventListener("load", () => setMediaZoom(1, { resetPosition: true }));
+mediaViewerImage?.addEventListener("error", () => {
+  const fallbackSource = mediaViewerImage.dataset.fallbackSrc;
+  if (!fallbackSource || mediaViewerImage.getAttribute("src") === fallbackSource) return;
+  mediaViewerImage.src = fallbackSource;
+});
 mediaViewerCanvas?.addEventListener("wheel", (event) => {
   event.preventDefault();
   setMediaZoom(mediaZoomLevel + (event.deltaY < 0 ? MEDIA_ZOOM_STEP : -MEDIA_ZOOM_STEP));
@@ -696,4 +789,5 @@ initCursor();
 renderHeroFeature();
 renderHeroStats();
 initHeroFeaturePreview();
+scheduleCoverWarmup();
 document.querySelector("#currentYear").textContent = new Date().getFullYear();
